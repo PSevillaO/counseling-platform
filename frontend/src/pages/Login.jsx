@@ -1,13 +1,24 @@
-import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 export default function Login() {
-  const { login } = useAuth();
+  const { user, login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const params = new URLSearchParams(location.search);
+  const redirectTo = params.get("redirect") || "/dashboard";
+
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Si ya está logueado, redirigir
+  useEffect(() => {
+    if (user) navigate(redirectTo);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -19,14 +30,13 @@ export default function Login() {
     setLoading(true);
     try {
       await login(formData.email, formData.password);
-      navigate("/dashboard");
+      navigate(redirectTo); // ← va al redirect o al dashboard
     } catch (err) {
       setError(err.response?.data?.message || "Error al iniciar sesión.");
     } finally {
       setLoading(false);
     }
   };
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-orange-50">
       <div className="bg-white p-8 rounded-2xl shadow-sm border border-orange-100 w-full max-w-md">

@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 export default function Register() {
-  const { register } = useAuth();
+  const { user, register } = useAuth();
   const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -14,6 +15,12 @@ export default function Register() {
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Si ya está logueado, redirigir
+  useEffect(() => {
+    if (user) navigate("/dashboard");
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -36,7 +43,6 @@ export default function Register() {
       setLoading(false);
     }
   };
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-orange-50">
       <div className="bg-white p-8 rounded-2xl shadow-sm border border-orange-100 w-full max-w-md">

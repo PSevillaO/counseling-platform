@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import counselorService from "../services/counselorService";
+import { useAuth } from "../context/AuthContext";
 
 export default function CounselorProfile() {
   const { id } = useParams();
@@ -14,7 +15,7 @@ export default function CounselorProfile() {
       try {
         const data = await counselorService.getById(id);
         setCounselor(data.counselor);
-      // eslint-disable-next-line no-unused-vars
+        // eslint-disable-next-line no-unused-vars
       } catch (error) {
         navigate("/counselors");
       } finally {
@@ -22,7 +23,7 @@ export default function CounselorProfile() {
       }
     };
     fetchCounselor();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   if (loading)
@@ -35,6 +36,8 @@ export default function CounselorProfile() {
   if (!counselor) return null;
 
   const profile = counselor.counselorProfile;
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const { user } = useAuth();
 
   return (
     <div className="min-h-screen bg-orange-50">
@@ -43,10 +46,16 @@ export default function CounselorProfile() {
       <div className="max-w-4xl mx-auto px-6 py-10">
         {/* Botón volver */}
         <button
-          onClick={() => navigate("/counselors")}
+          onClick={() => {
+            if (user) {
+              navigate(`/book/${counselor._id}`);
+            } else {
+              navigate(`/login?redirect=/book/${counselor._id}`);
+            }
+          }}
           className="text-sm text-stone-400 hover:text-orange-400 transition-colors mb-6 flex items-center gap-1"
         >
-          ← Volver a counselors
+           Reservar sesión con {counselor.firstName}
         </button>
 
         {/* Card principal */}

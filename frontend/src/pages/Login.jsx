@@ -30,6 +30,12 @@ export default function Login() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-orange-50">
       <div className="bg-white p-8 rounded-2xl shadow-sm border border-orange-100 w-full max-w-md">
+        {/* Header mínimo */}
+        <div className="bg-white border-b border-orange-100 px-1 py-4">
+          <Link to="/" className="text-xl font-bold text-orange-400">
+            🌸 Contigo
+          </Link>
+        </div>
         <h1 className="text-2xl font-bold text-stone-800 mb-1">
           Bienvenido de vuelta
         </h1>

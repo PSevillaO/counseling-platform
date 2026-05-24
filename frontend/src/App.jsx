@@ -3,6 +3,8 @@ import { useAuth } from './context/AuthContext'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
+import Counselors from './pages/Counselors'
+import CounselorProfile from './pages/CounselorProfile'
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth()
@@ -20,14 +22,9 @@ function App() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+        <Route path="/counselors" element={<ProtectedRoute><Counselors /></ProtectedRoute>} />
+        <Route path="/counselors/:id" element={<ProtectedRoute><CounselorProfile /></ProtectedRoute>} />
         <Route path="/" element={<Navigate to="/dashboard" />} />
       </Routes>
     </BrowserRouter>

@@ -6,6 +6,7 @@ import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import Counselors from "./pages/Counselors";
 import CounselorProfile from "./pages/CounselorProfile";
+import Booking from "./pages/Booking";
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -46,6 +47,14 @@ function App() {
           element={
             <ProtectedRoute>
               <CounselorProfile />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/book/:id"
+          element={
+            <ProtectedRoute>
+              <Booking />
             </ProtectedRoute>
           }
         />

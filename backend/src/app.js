@@ -28,7 +28,8 @@ app.use("/api", limiter);
 
 // ↓ RUTAS — agregar acá
 app.use("/api/auth", require("./routes/auth"));
-app.use('/api/counselors', require('./routes/counselors')) // ← agregar esta línea
+app.use('/api/counselors', require('./routes/counselors')) 
+app.use('/api/appointments', require('./routes/appointments')) // ← agregar
 
 // Health check
 app.get("/health", (req, res) => {

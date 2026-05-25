@@ -73,4 +73,8 @@ app.use((err, req, res, next) => {
   });
 });
 
+app.get('/version', (req, res) => {
+  res.json({ version: '2.0', cors: 'enabled', frontend: process.env.FRONTEND_URL })
+})
+
 module.exports = app;

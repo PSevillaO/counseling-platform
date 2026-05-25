@@ -6,33 +6,44 @@ const rateLimit = require("express-rate-limit");
 
 const app = express();
 
-app.use(helmet());
-
 console.log("FRONTEND_URL:", process.env.FRONTEND_URL);
-// Middleware manual CORS - va ANTES de todo
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', 'https://espaciodeescucha.netlify.app')
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
-  res.header('Access-Control-Allow-Credentials', 'true')
-  if (req.method === 'OPTIONS') {
-    return res.sendStatus(204)
-  }
-  next()
-})
 
-app.use(cors({
-  origin: [
-    'http://localhost:5173',
-    'http://localhost:3000',
-    'https://espaciodeescucha.netlify.app',
-  ],
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  preflightContinue: false,
-  optionsSuccessStatus: 204,
-}))
+// CORS primero, antes de todo
+app.use((req, res, next) => {
+  res.header(
+    "Access-Control-Allow-Origin",
+    "https://espaciodeescucha.netlify.app",
+  );
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.header("Access-Control-Allow-Credentials", "true");
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(204);
+  }
+  next();
+});
+
+app.use(
+  cors({
+    origin: [
+      "http://localhost:5173",
+      "http://localhost:3000",
+      "https://espaciodeescucha.netlify.app",
+    ],
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type, Authorization"],
+    preflightContinue: false,
+    optionsSuccessStatus: 204,
+  }),
+);
+
+// Helmet después de CORS
+app.use(
+  helmet({
+    crossOriginResourcePolicy: false,
+  }),
+);
 
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
@@ -44,7 +55,6 @@ const limiter = rateLimit({
   message: "Demasiadas solicitudes, intentá más tarde.",
 });
 app.use("/api", limiter);
-
 // ↓ RUTAS — agregar acá
 app.use("/api/auth", require("./routes/auth"));
 app.use("/api/counselors", require("./routes/counselors"));
@@ -52,6 +62,14 @@ app.use("/api/appointments", require("./routes/appointments"));
 app.use("/api/users", require("./routes/users"));
 app.use("/api/availability", require("./routes/availability"));
 app.use("/api/admin", require("./routes/admin"));
+
+app.get("/version", (req, res) => {
+  res.json({
+    version: "2.0",
+    cors: "enabled",
+    frontend: process.env.FRONTEND_URL,
+  });
+});
 
 // Health check
 app.get("/health", (req, res) => {
@@ -72,9 +90,5 @@ app.use((err, req, res, next) => {
     ...(process.env.NODE_ENV === "development" && { stack: err.stack }),
   });
 });
-
-app.get('/version', (req, res) => {
-  res.json({ version: '2.0', cors: 'enabled', frontend: process.env.FRONTEND_URL })
-})
 
 module.exports = app;

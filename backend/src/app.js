@@ -10,7 +10,23 @@ app.use(helmet());
 
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    origin: function (origin, callback) {
+      const allowedOrigins = [
+        "http://localhost:5173",
+        "http://localhost:3000",
+        process.env.FRONTEND_URL,
+      ].filter(Boolean);
+
+      // Permitir requests sin origin (Postman, mobile apps)
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        console.log("CORS bloqueado para:", origin);
+        callback(new Error("No permitido por CORS"));
+      }
+    },
     credentials: true,
   }),
 );
@@ -28,11 +44,11 @@ app.use("/api", limiter);
 
 // ↓ RUTAS — agregar acá
 app.use("/api/auth", require("./routes/auth"));
-app.use('/api/counselors', require('./routes/counselors')) 
-app.use('/api/appointments', require('./routes/appointments')) 
-app.use('/api/users', require('./routes/users')) 
-app.use('/api/availability', require('./routes/availability'))
-app.use('/api/admin', require('./routes/admin'))
+app.use("/api/counselors", require("./routes/counselors"));
+app.use("/api/appointments", require("./routes/appointments"));
+app.use("/api/users", require("./routes/users"));
+app.use("/api/availability", require("./routes/availability"));
+app.use("/api/admin", require("./routes/admin"));
 
 // Health check
 app.get("/health", (req, res) => {

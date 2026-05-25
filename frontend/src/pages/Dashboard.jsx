@@ -93,6 +93,7 @@ export default function Dashboard() {
                       weekday: "long",
                       day: "numeric",
                       month: "long",
+                      timeZone: "UTC",
                     })}{" "}
                     · 🕐 {upcoming[0].time}hs
                   </p>

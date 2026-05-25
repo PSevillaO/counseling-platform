@@ -20,15 +20,12 @@ export default function AdminCounselors() {
   const handleToggle = async (id) => {
     setToggling(id);
     try {
-      const data = await adminService.toggleCounselor(id);
-      setCounselors((prev) =>
-        prev.map((c) =>
-          c._id === id ? { ...c, isActive: data.counselor.isActive } : c,
-        ),
-      );
-    // eslint-disable-next-line no-unused-vars
+      await adminService.toggleCounselor(id);
+      // En lugar de usar el valor que devuelve, recargamos la lista completa
+      const data = await adminService.getCounselors();
+      setCounselors(data.counselors);
     } catch (error) {
-      alert("Error al actualizar el counselor.");
+      alert("Error al actualizar el counselor." + error);
     } finally {
       setToggling(null);
     }
@@ -36,11 +33,19 @@ export default function AdminCounselors() {
 
   return (
     <AdminLayout>
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-stone-800">Counselors</h1>
-        <p className="text-stone-400 text-sm mt-1">
-          Gestioná los counselors de la plataforma.
-        </p>
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h1 className="text-2xl font-bold text-stone-800">Counselors</h1>
+          <p className="text-stone-400 text-sm mt-1">
+            Gestioná los counselors de la plataforma.
+          </p>
+        </div>
+        <button
+          onClick={() => navigate("/admin/counselors/new")}
+          className="bg-orange-400 hover:bg-orange-500 text-white font-semibold px-5 py-2.5 rounded-full text-sm transition-colors"
+        >
+          + Nuevo counselor
+        </button>
       </div>
 
       {loading ? (
@@ -128,6 +133,14 @@ export default function AdminCounselors() {
                           : c.isActive
                             ? "Desactivar"
                             : "Activar"}
+                      </button>
+                      <button
+                        onClick={() =>
+                          navigate(`/admin/counselors/${c._id}/edit`)
+                        }
+                        className="text-xs text-orange-400 font-medium hover:text-orange-600 transition-colors"
+                      >
+                        Editar
                       </button>
                       <button
                         onClick={() =>

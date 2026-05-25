@@ -5,6 +5,8 @@ const {
   toggleCounselor,
   getAllAppointments,
   getStats,
+  createCounselor,
+  updateCounselor
 } = require("../controllers/adminController");
 const { protect, restrictTo } = require("../middleware/auth");
 
@@ -13,7 +15,9 @@ router.use(restrictTo("admin"));
 
 router.get("/stats", getStats);
 router.get("/counselors", getCounselors);
+router.post("/counselors", createCounselor);
 router.put("/counselors/:id/toggle", toggleCounselor);
 router.get("/appointments", getAllAppointments);
+router.put("/counselors/:id", updateCounselor);
 
 module.exports = router;

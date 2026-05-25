@@ -67,8 +67,7 @@ export default function Profile() {
         }),
       };
       const data = await userService.updateProfile(payload);
-      // Actualizar el usuario en localStorage
-      updateUser(data.user) // ← reemplazar localStorage.setItem
+      updateUser(data.user);
       setSuccess(true);
     } catch (err) {
       setError(err.response?.data?.message || "Error al guardar los cambios.");
@@ -145,7 +144,7 @@ export default function Profile() {
               <label className="block text-sm font-medium text-stone-600 mb-1">
                 Rol
               </label>
-              <div className="px-4 py-2.5 border border-stone-100 rounded-lg text-sm bg-stone-50 text-stone-400 capitalize">
+              <div className="px-4 py-2.5 border border-stone-100 rounded-lg text-sm bg-stone-50 text-stone-400">
                 {user?.role === "client" ? "👤 Cliente" : "🎓 Counselor"}
               </div>
             </div>
@@ -157,7 +156,6 @@ export default function Profile() {
               <h2 className="font-semibold text-stone-700 mb-4">
                 Perfil profesional
               </h2>
-
               <div className="mb-4">
                 <label className="block text-sm font-medium text-stone-600 mb-1">
                   Bio
@@ -175,7 +173,6 @@ export default function Profile() {
                   {formData.bio.length}/500
                 </p>
               </div>
-
               <div className="mb-4">
                 <label className="block text-sm font-medium text-stone-600 mb-1">
                   Precio por sesión (USD)
@@ -190,7 +187,6 @@ export default function Profile() {
                   placeholder="Ej: 45"
                 />
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-stone-600 mb-2">
                   Especialidades
@@ -215,7 +211,7 @@ export default function Profile() {
             </div>
           )}
 
-          {/* Feedback */}
+          {/* Feedback perfil */}
           {success && (
             <div className="bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded-xl text-sm">
               ✅ Perfil actualizado correctamente.
@@ -235,7 +231,126 @@ export default function Profile() {
             {saving ? "Guardando..." : "Guardar cambios"}
           </button>
         </form>
+
+        {/* Cambio de contraseña — fuera del form principal */}
+        <div className="mt-4">
+          <ChangePassword />
+        </div>
       </div>
+    </div>
+  );
+}
+
+function ChangePassword() {
+  const [formData, setFormData] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+  const [saving, setSaving] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setError("");
+    setSuccess(false);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (formData.newPassword !== formData.confirmPassword) {
+      setError("Las contraseñas nuevas no coinciden.");
+      return;
+    }
+    if (formData.newPassword.length < 6) {
+      setError("La nueva contraseña debe tener al menos 6 caracteres.");
+      return;
+    }
+    setSaving(true);
+    try {
+      await userService.changePassword({
+        currentPassword: formData.currentPassword,
+        newPassword: formData.newPassword,
+      });
+      setSuccess(true);
+      setFormData({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+    } catch (err) {
+      setError(
+        err.response?.data?.message || "Error al cambiar la contraseña.",
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="bg-white rounded-2xl border border-orange-100 p-6">
+      <h2 className="font-semibold text-stone-700 mb-4">Cambiar contraseña</h2>
+      <form onSubmit={handleSubmit} className="space-y-3">
+        <div>
+          <label className="block text-sm font-medium text-stone-600 mb-1">
+            Contraseña actual
+          </label>
+          <input
+            type="password"
+            name="currentPassword"
+            value={formData.currentPassword}
+            onChange={handleChange}
+            required
+            className="w-full px-4 py-2.5 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-300 text-sm"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-stone-600 mb-1">
+            Nueva contraseña
+          </label>
+          <input
+            type="password"
+            name="newPassword"
+            value={formData.newPassword}
+            onChange={handleChange}
+            required
+            className="w-full px-4 py-2.5 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-300 text-sm"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-stone-600 mb-1">
+            Confirmar nueva contraseña
+          </label>
+          <input
+            type="password"
+            name="confirmPassword"
+            value={formData.confirmPassword}
+            onChange={handleChange}
+            required
+            className="w-full px-4 py-2.5 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-300 text-sm"
+          />
+        </div>
+
+        {success && (
+          <div className="bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded-xl text-sm">
+            ✅ Contraseña actualizada correctamente.
+          </div>
+        )}
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm">
+            {error}
+          </div>
+        )}
+
+        <button
+          type="submit"
+          disabled={saving}
+          className="w-full bg-stone-700 hover:bg-stone-800 text-white font-bold py-2.5 rounded-xl transition-colors disabled:opacity-60 text-sm"
+        >
+          {saving ? "Actualizando..." : "Cambiar contraseña"}
+        </button>
+      </form>
     </div>
   );
 }

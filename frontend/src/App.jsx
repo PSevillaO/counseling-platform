@@ -14,6 +14,8 @@ import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminCounselors from './pages/admin/AdminCounselors'
 import AdminAppointments from './pages/admin/AdminAppointments'
 import AvailabilityEditor from './pages/admin/AvailabilityEditor'
+import CreateCounselor from './pages/admin/CreateCounselor'
+import EditCounselor from './pages/admin/EditCounselor'
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth()
@@ -48,6 +50,8 @@ function App() {
         <Route path="/admin/counselors" element={<AdminRoute><AdminCounselors /></AdminRoute>} />
         <Route path="/admin/appointments" element={<AdminRoute><AdminAppointments /></AdminRoute>} />
         <Route path="/admin/counselors/:counselorId/availability" element={<AdminRoute><AvailabilityEditor /></AdminRoute>} />
+        <Route path="/admin/counselors/new" element={<AdminRoute><CreateCounselor /></AdminRoute>} />
+        <Route path="/admin/counselors/:id/edit" element={<AdminRoute><EditCounselor /></AdminRoute>} />
 
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>

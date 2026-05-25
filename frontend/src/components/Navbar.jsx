@@ -33,6 +33,14 @@ export default function Navbar() {
 
           {user ? (
             <div className="flex items-center gap-4">
+              {user.role === "admin" && (
+                <Link
+                  to="/admin"
+                  className="text-sm font-semibold text-orange-400 bg-orange-50 border border-orange-200 px-3 py-1.5 rounded-full hover:bg-orange-100 transition-colors"
+                >
+                  ⚙️ Admin
+                </Link>
+              )}
               <Link
                 to="/dashboard"
                 className="text-sm text-stone-500 hover:text-orange-400 transition-colors"

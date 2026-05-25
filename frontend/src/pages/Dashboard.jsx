@@ -141,6 +141,18 @@ export default function Dashboard() {
           {isCounselor && (
             <>
               <Link
+                to="/availability"
+                className="bg-white rounded-2xl p-6 border border-orange-100 hover:border-orange-300 transition-colors group"
+              >
+                <div className="text-3xl mb-3">🗓️</div>
+                <h3 className="font-semibold text-stone-800 group-hover:text-orange-500 transition-colors">
+                  Mi agenda
+                </h3>
+                <p className="text-sm text-stone-400 mt-1">
+                  Configurá tus horarios disponibles.
+                </p>
+              </Link>
+              <Link
                 to="/appointments"
                 className="bg-white rounded-2xl p-6 border border-orange-100 hover:border-orange-300 transition-colors group"
               >

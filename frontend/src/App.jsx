@@ -9,6 +9,11 @@ import CounselorProfile from './pages/CounselorProfile'
 import Booking from './pages/Booking'
 import Appointments from './pages/Appointments'
 import Profile from './pages/Profile'
+import AdminRoute from './components/AdminRoute'
+import AdminDashboard from './pages/admin/AdminDashboard'
+import AdminCounselors from './pages/admin/AdminCounselors'
+import AdminAppointments from './pages/admin/AdminAppointments'
+import AvailabilityEditor from './pages/admin/AvailabilityEditor'
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth()
@@ -24,18 +29,25 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Rutas públicas */}
+        {/* Públicas */}
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/counselors" element={<Counselors />} />
         <Route path="/counselors/:id" element={<CounselorProfile />} />
 
-        {/* Rutas protegidas */}
+        {/* Protegidas */}
         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
         <Route path="/book/:id" element={<ProtectedRoute><Booking /></ProtectedRoute>} />
         <Route path="/appointments" element={<ProtectedRoute><Appointments /></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+        <Route path="/availability" element={<ProtectedRoute><AvailabilityEditor /></ProtectedRoute>} />
+
+        {/* Admin */}
+        <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+        <Route path="/admin/counselors" element={<AdminRoute><AdminCounselors /></AdminRoute>} />
+        <Route path="/admin/appointments" element={<AdminRoute><AdminAppointments /></AdminRoute>} />
+        <Route path="/admin/counselors/:counselorId/availability" element={<AdminRoute><AvailabilityEditor /></AdminRoute>} />
 
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>

@@ -46,9 +46,12 @@ const createAppointment = async (req, res) => {
     }
 
     // Verificar que no hay otra cita en ese horario
+    const startOfDay = new Date(date + "T00:00:00.000Z");
+    const endOfDay = new Date(date + "T23:59:59.999Z");
+
     const existingAppointment = await Appointment.findOne({
       counselor: counselorId,
-      date: new Date(date),
+      date: { $gte: startOfDay, $lte: endOfDay },
       time,
       status: { $in: ["pending", "confirmed"] },
     });
@@ -102,12 +105,10 @@ const cancelAppointment = async (req, res) => {
       appointment.counselor.toString() === req.user._id.toString();
 
     if (!isOwner) {
-      return res
-        .status(403)
-        .json({
-          success: false,
-          message: "No tenés permiso para cancelar esta cita.",
-        });
+      return res.status(403).json({
+        success: false,
+        message: "No tenés permiso para cancelar esta cita.",
+      });
     }
 
     appointment.status = "cancelled";

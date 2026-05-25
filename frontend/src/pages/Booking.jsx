@@ -3,25 +3,15 @@ import { useParams, useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import counselorService from "../services/counselorService";
 import appointmentService from "../services/appointmentService";
-
-const timeSlots = [
-  "09:00",
-  "10:00",
-  "11:00",
-  "12:00",
-  "14:00",
-  "15:00",
-  "16:00",
-  "17:00",
-  "18:00",
-];
+import availabilityService from "../services/availabilityService";
 
 const getNextDays = (count) => {
   const days = [];
-  const today = new Date();
   for (let i = 1; i <= count; i++) {
-    const date = new Date(today);
-    date.setDate(today.getDate() + i);
+    // Crear fecha con mediodía local para evitar problemas de timezone
+    const date = new Date();
+    date.setHours(12, 0, 0, 0);
+    date.setDate(date.getDate() + i);
     days.push(date);
   }
   return days;
@@ -29,14 +19,18 @@ const getNextDays = (count) => {
 
 const formatDate = (date) => {
   return date.toLocaleDateString("es-AR", {
-    weekday: "short",
+    weekday: "long",
     day: "numeric",
-    month: "short",
+    month: "long",
+    timeZone: "UTC",
   });
 };
 
 const formatDateValue = (date) => {
-  return date.toISOString().split("T")[0];
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 };
 
 export default function Booking() {
@@ -45,6 +39,8 @@ export default function Booking() {
   const [counselor, setCounselor] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(null);
+  const [availableSlots, setAvailableSlots] = useState([]);
+  const [loadingSlots, setLoadingSlots] = useState(false);
   const [selectedTime, setSelectedTime] = useState(null);
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -59,8 +55,24 @@ export default function Booking() {
       .then((data) => setCounselor(data.counselor))
       .catch(() => navigate("/counselors"))
       .finally(() => setLoading(false));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+  // Cuando cambia la fecha, buscar slots disponibles
+  useEffect(() => {
+    if (!selectedDate) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setLoadingSlots(true);
+    setSelectedTime(null);
+    setAvailableSlots([]);
+
+    availabilityService
+      .getSlots(id, formatDateValue(selectedDate))
+      .then((data) => setAvailableSlots(data.slots || []))
+      .catch(() => setAvailableSlots([]))
+      .finally(() => setLoadingSlots(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedDate]);
 
   const handleSubmit = async () => {
     if (!selectedDate || !selectedTime) {
@@ -135,7 +147,6 @@ export default function Booking() {
     <div className="min-h-screen bg-orange-50">
       <Navbar />
       <div className="max-w-3xl mx-auto px-6 py-10">
-        {/* Volver */}
         <button
           onClick={() => navigate(`/counselors/${id}`)}
           className="text-sm text-stone-400 hover:text-orange-400 transition-colors mb-6 flex items-center gap-1"
@@ -163,10 +174,15 @@ export default function Booking() {
               return (
                 <button
                   key={day.toDateString()}
+                  // onClick={() => setSelectedDate(day)}
                   onClick={() => {
+                    console.log(
+                      "día:",
+                      day.toLocaleDateString("es-AR", { weekday: "long" }),
+                    );
+                    console.log("fecha:", formatDateValue(day));
                     setSelectedDate(day);
-                    setSelectedTime(null);
-                  }}
+                  }} // hasta aca
                   className={`p-2 rounded-xl text-center text-xs font-medium transition-all ${
                     isSelected
                       ? "bg-orange-400 text-white shadow-sm"
@@ -188,27 +204,44 @@ export default function Booking() {
           </div>
         </div>
 
-        {/* Paso 2: Horario */}
+        {/* Paso 2: Horario con slots reales */}
         {selectedDate && (
           <div className="bg-white rounded-2xl border border-orange-100 p-6 mb-4">
             <h2 className="font-semibold text-stone-700 mb-4">
               2. Elegí un horario
             </h2>
-            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
-              {timeSlots.map((time) => (
-                <button
-                  key={time}
-                  onClick={() => setSelectedTime(time)}
-                  className={`py-2.5 rounded-xl text-sm font-medium transition-all ${
-                    selectedTime === time
-                      ? "bg-orange-400 text-white shadow-sm"
-                      : "bg-orange-50 text-stone-500 hover:bg-orange-100 border border-orange-100"
-                  }`}
-                >
-                  {time}hs
-                </button>
-              ))}
-            </div>
+
+            {loadingSlots ? (
+              <div className="text-sm text-orange-400">
+                Cargando horarios disponibles...
+              </div>
+            ) : availableSlots.length === 0 ? (
+              <div className="text-center py-6">
+                <div className="text-3xl mb-2">😔</div>
+                <p className="text-sm text-stone-400">
+                  No hay horarios disponibles para este día.
+                </p>
+                <p className="text-xs text-stone-300 mt-1">
+                  Probá con otra fecha.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                {availableSlots.map((time) => (
+                  <button
+                    key={time}
+                    onClick={() => setSelectedTime(time)}
+                    className={`py-2.5 rounded-xl text-sm font-medium transition-all ${
+                      selectedTime === time
+                        ? "bg-orange-400 text-white shadow-sm"
+                        : "bg-orange-50 text-stone-500 hover:bg-orange-100 border border-orange-100"
+                    }`}
+                  >
+                    {time}hs
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -226,7 +259,7 @@ export default function Booking() {
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
               maxLength={500}
-              placeholder="Ej: Estoy pasando por un momento de mucho estrés laboral y me gustaría encontrar herramientas para manejarlo..."
+              placeholder="Ej: Estoy pasando por un momento de mucho estrés laboral..."
               className="w-full px-4 py-3 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-300 text-sm resize-none"
             />
             <p className="text-xs text-stone-300 text-right mt-1">
@@ -249,7 +282,10 @@ export default function Booking() {
                 },
                 { label: "Fecha", value: formatDate(selectedDate) },
                 { label: "Horario", value: `${selectedTime}hs` },
-                { label: "Duración", value: "50 minutos" },
+                {
+                  label: "Duración",
+                  value: `${counselor?.counselorProfile?.sessionDuration || 50} minutos`,
+                },
                 {
                   label: "Precio",
                   value: `$${counselor?.counselorProfile?.hourlyRate} USD`,

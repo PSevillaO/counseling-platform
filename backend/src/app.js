@@ -8,6 +8,8 @@ const app = express();
 
 app.use(helmet());
 
+console.log("FRONTEND_URL:", process.env.FRONTEND_URL);
+
 app.use(
   cors({
     origin: function (origin, callback) {
@@ -17,13 +19,13 @@ app.use(
         process.env.FRONTEND_URL,
       ].filter(Boolean);
 
-      // Permitir requests sin origin (Postman, mobile apps)
-      if (!origin) return callback(null, true);
+      console.log("Origin recibido:", origin);
+      console.log("Allowed origins:", allowedOrigins);
 
+      if (!origin) return callback(null, true);
       if (allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
-        console.log("CORS bloqueado para:", origin);
         callback(new Error("No permitido por CORS"));
       }
     },

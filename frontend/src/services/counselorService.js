@@ -13,6 +13,10 @@ const counselorService = {
     const response = await api.get(`/counselors/${id}`);
     return response.data;
   },
+  getClients: async (counselorId) => {
+    const response = await api.get(`/counselors/${counselorId}/clients`);
+    return response.data;
+  },
 };
 
 export default counselorService;

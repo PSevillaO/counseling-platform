@@ -173,6 +173,29 @@ const updateCounselor = async (req, res) => {
       .json({ success: false, message: "Error al actualizar el counselor." });
   }
 };
+
+// GET /api/counselors/:id/clients
+const getCounselorClients = async (req, res) => {
+  try {
+    const appointments = await Appointment.find({
+      counselor: req.params.id,
+      status: { $in: ["confirmed", "completed"] },
+    }).populate("client", "firstName lastName email");
+
+    // Clientes únicos
+    const clientsMap = {};
+    appointments.forEach((apt) => {
+      if (apt.client) clientsMap[apt.client._id] = apt.client;
+    });
+
+    res.json({ success: true, clients: Object.values(clientsMap) });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ success: false, message: "Error al obtener clientes." });
+  }
+};
+
 module.exports = {
   getCounselors,
   toggleCounselor,
@@ -180,4 +203,5 @@ module.exports = {
   getStats,
   createCounselor,
   updateCounselor,
+  getCounselorClients,
 };

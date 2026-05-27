@@ -209,4 +209,152 @@ const transferAppointment = async (req, res) => {
   }
 };
 
-module.exports = { getAppointments, createAppointment, cancelAppointment, transferAppointment };
+// POST /api/appointments/recurring
+const createRecurringAppointments = async (req, res) => {
+  try {
+    const {
+      counselorId,
+      clientId,
+      startDate,
+      time,
+      frequency,
+      endType,
+      sessionsCount,
+      endDate,
+      notes,
+    } = req.body;
+
+    // Validaciones
+    if (!counselorId || !startDate || !time || !frequency) {
+      return res.status(400).json({
+        success: false,
+        message: "Counselor, fecha, horario y frecuencia son requeridos.",
+      });
+    }
+
+    // Solo admin o counselor pueden crear periódicas
+    const isAdmin = req.user.role === "admin";
+    const isCounselor =
+      req.user.role === "counselor" && req.user._id.toString() === counselorId;
+
+    if (!isAdmin && !isCounselor) {
+      return res
+        .status(403)
+        .json({ success: false, message: "No tenés permiso." });
+    }
+
+    // Verificar counselor
+    const counselor = await User.findOne({
+      _id: counselorId,
+      role: "counselor",
+    });
+    if (!counselor) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Counselor no encontrado." });
+    }
+    const client = await User.findById(clientId);
+    if (!client) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Cliente no encontrado." });
+    }
+    // Calcular fechas de la serie
+    const dates = [];
+    const start = new Date(startDate + "T12:00:00");
+    const maxMonths = parseInt(process.env.MAX_RECURRING_MONTHS || 5);
+    const maxDate = new Date(start);
+    maxDate.setMonth(maxDate.getMonth() + maxMonths);
+
+    const frequencyDays = {
+      weekly: 7,
+      biweekly: 14,
+      monthly: null, // especial
+    };
+
+    let current = new Date(start);
+    let count = 0;
+    const maxSessions = endType === "count" ? sessionsCount : 999;
+
+    while (count < maxSessions) {
+      const dateStr = current.toISOString().split("T")[0];
+
+      // Verificar límite de fecha
+      if (endType === "date" && current > new Date(endDate + "T12:00:00"))
+        break;
+      if (current > maxDate) break;
+
+      dates.push(new Date(current));
+      count++;
+
+      // Avanzar según frecuencia
+      if (frequency === "monthly") {
+        current = new Date(current);
+        current.setMonth(current.getMonth() + 1);
+      } else {
+        current = new Date(current);
+        current.setDate(current.getDate() + frequencyDays[frequency]);
+      }
+    }
+
+    if (dates.length === 0) {
+      return res
+        .status(400)
+        .json({ success: false, message: "No se generaron fechas válidas." });
+    }
+
+    // Verificar conflictos para cada fecha
+    const created = [];
+    const skipped = [];
+
+    for (const date of dates) {
+      const startOfDay = new Date(date);
+      startOfDay.setUTCHours(0, 0, 0, 0);
+      const endOfDay = new Date(date);
+      endOfDay.setUTCHours(23, 59, 59, 999);
+
+      const conflict = await Appointment.findOne({
+        counselor: counselorId,
+        date: { $gte: startOfDay, $lte: endOfDay },
+        time,
+        status: { $in: ["confirmed", "pending"] },
+      });
+
+      if (conflict) {
+        skipped.push(date.toISOString().split("T")[0]);
+        continue;
+      }
+
+      const apt = await Appointment.create({
+        client: clientId,
+        counselor: counselorId,
+        date,
+        time,
+        notes,
+        isRecurring: true,
+      });
+      created.push(apt);
+    }
+
+    res.status(201).json({
+      success: true,
+      message: `Se crearon ${created.length} sesiones.`,
+      created: created.length,
+      skipped,
+    });
+  } catch (error) {
+    console.error("ERROR createRecurring:", error.message);
+    res.status(500).json({
+      success: false,
+      message: "Error al crear las sesiones periódicas.",
+    });
+  }
+};
+
+module.exports = {
+  getAppointments,
+  createAppointment,
+  cancelAppointment,
+  transferAppointment,
+  createRecurringAppointments,
+};

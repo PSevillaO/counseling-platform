@@ -1,4 +1,5 @@
 const User = require("../models/User");
+const Appointment = require("../models/Appointment");
 
 // GET /api/counselors
 const getCounselors = async (req, res) => {
@@ -55,4 +56,22 @@ const getCounselorById = async (req, res) => {
   }
 };
 
-module.exports = { getCounselors, getCounselorById };
+const getCounselorClients = async (req, res) => {
+  try {
+    const appointments = await Appointment.find({
+      counselor: req.params.id,
+      status: { $in: ['confirmed', 'completed'] }
+    }).populate('client', 'firstName lastName email')
+
+    const clientsMap = {}
+    appointments.forEach((apt) => {
+      if (apt.client) clientsMap[apt.client._id] = apt.client
+    })
+
+    res.json({ success: true, clients: Object.values(clientsMap) })
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error al obtener clientes.' })
+  }
+}
+
+module.exports = { getCounselors, getCounselorById, getCounselorClients };

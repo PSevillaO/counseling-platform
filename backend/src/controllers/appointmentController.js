@@ -122,4 +122,91 @@ const cancelAppointment = async (req, res) => {
   }
 };
 
-module.exports = { getAppointments, createAppointment, cancelAppointment };
+// PUT /api/appointments/:id/transfer
+const transferAppointment = async (req, res) => {
+  try {
+    const { newCounselorId, newDate, newTime } = req.body;
+    const appointment = await Appointment.findById(req.params.id);
+
+    if (!appointment) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Cita no encontrada." });
+    }
+
+    // Verificar permisos — solo admin o el counselor dueño
+    const isAdmin = req.user.role === "admin";
+    const isCounselor =
+      appointment.counselor.toString() === req.user._id.toString();
+
+    if (!isAdmin && !isCounselor) {
+      return res
+        .status(403)
+        .json({ success: false, message: "No tenés permiso." });
+    }
+
+    // Si cambia de counselor, verificar que existe
+    if (newCounselorId && newCounselorId !== appointment.counselor.toString()) {
+      const counselor = await User.findOne({
+        _id: newCounselorId,
+        role: "counselor",
+      });
+      if (!counselor) {
+        return res
+          .status(404)
+          .json({ success: false, message: "Counselor no encontrado." });
+      }
+      appointment.counselor = newCounselorId;
+    }
+
+    // Verificar conflicto en el nuevo horario
+    if (newDate || newTime) {
+      const checkDate = newDate
+        ? new Date(newDate + "T12:00:00")
+        : appointment.date;
+      const checkTime = newTime || appointment.time;
+
+      const startOfDay = new Date(checkDate);
+      startOfDay.setUTCHours(0, 0, 0, 0);
+      const endOfDay = new Date(checkDate);
+      endOfDay.setUTCHours(23, 59, 59, 999);
+
+      const conflict = await Appointment.findOne({
+        _id: { $ne: appointment._id },
+        counselor: appointment.counselor,
+        date: { $gte: startOfDay, $lte: endOfDay },
+        time: checkTime,
+        status: { $in: ["confirmed", "pending"] },
+      });
+
+      if (conflict) {
+        return res.status(400).json({
+          success: false,
+          message: "Ese horario ya está ocupado.",
+        });
+      }
+
+      if (newDate) appointment.date = new Date(newDate + "T12:00:00");
+      if (newTime) appointment.time = newTime;
+    }
+
+    await appointment.save();
+
+    const populated = await appointment.populate([
+      { path: "client", select: "firstName lastName email" },
+      { path: "counselor", select: "firstName lastName counselorProfile" },
+    ]);
+
+    res.json({
+      success: true,
+      message: "Cita transferida correctamente.",
+      appointment: populated,
+    });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ success: false, message: "Error al transferir la cita." });
+  }
+};
+
+module.exports = { getAppointments, createAppointment, cancelAppointment, transferAppointment };

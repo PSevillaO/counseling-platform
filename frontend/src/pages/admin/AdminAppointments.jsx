@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import AdminLayout from "./AdminLayout";
 import adminService from "../../services/adminService";
+import TransferModal from "../../components/TransferModal";
 
 const statusConfig = {
   confirmed: {
@@ -25,6 +26,7 @@ export default function AdminAppointments() {
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
+  const [transferring, setTransferring] = useState(null);
 
   useEffect(() => {
     adminService
@@ -92,6 +94,9 @@ export default function AdminAppointments() {
                 <th className="text-left px-6 py-4 text-xs font-semibold text-stone-400 uppercase tracking-wider">
                   Estado
                 </th>
+                <th className="text-left px-6 py-4 text-xs font-semibold text-stone-400 uppercase tracking-wider">
+                  Acciones
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-orange-50">
@@ -136,11 +141,34 @@ export default function AdminAppointments() {
                         {statusConfig[apt.status]?.label}
                       </span>
                     </td>
+                    <td className="px-6 py-4">
+                      {["confirmed", "pending"].includes(apt.status) && (
+                        <button
+                          onClick={() => setTransferring(apt)}
+                          className="text-xs text-orange-400 font-medium hover:text-orange-600 transition-colors"
+                        >
+                          Transferir
+                        </button>
+                      )}
+                    </td>
                   </tr>
                 ))
               )}
             </tbody>
           </table>
+          {transferring && (
+            <TransferModal
+              appointment={transferring}
+              isAdmin={true}
+              onClose={() => setTransferring(null)}
+              onSuccess={() => {
+                setTransferring(null);
+                adminService
+                  .getAllAppointments()
+                  .then((data) => setAppointments(data.appointments));
+              }}
+            />
+          )}
         </div>
       )}
     </AdminLayout>

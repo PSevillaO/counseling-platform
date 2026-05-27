@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import appointmentService from "../services/appointmentService";
 import { useAuth } from "../context/AuthContext";
+import TransferModal from "../components/TransferModal";
 
 const statusConfig = {
   confirmed: {
@@ -29,7 +30,7 @@ const formatDate = (date) => {
     day: "numeric",
     month: "long",
     year: "numeric",
-    timeZone: 'UTC',
+    timeZone: "UTC",
   });
 };
 
@@ -39,6 +40,8 @@ export default function Appointments() {
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState(null);
+
+  const [transferring, setTransferring] = useState(null); // appointment seleccionado
 
   const isClient = user?.role === "client";
 
@@ -58,7 +61,7 @@ export default function Appointments() {
       setAppointments((prev) =>
         prev.map((a) => (a._id === id ? { ...a, status: "cancelled" } : a)),
       );
-    // eslint-disable-next-line no-unused-vars
+      // eslint-disable-next-line no-unused-vars
     } catch (error) {
       alert("No se pudo cancelar la sesión.");
     } finally {
@@ -138,6 +141,7 @@ export default function Appointments() {
                   isClient={isClient}
                   cancelling={cancelling}
                   onCancel={handleCancel}
+                  onTransfer={(apt) => setTransferring(apt)} // ← agregar
                   onViewCounselor={() =>
                     navigate(`/counselors/${apt.counselor._id}`)
                   }
@@ -171,6 +175,20 @@ export default function Appointments() {
           </div>
         )}
       </div>
+      {transferring && (
+        <TransferModal
+          appointment={transferring}
+          isAdmin={user?.role === "admin"}
+          onClose={() => setTransferring(null)}
+          onSuccess={() => {
+            setTransferring(null);
+            // Recargar citas
+            appointmentService
+              .getAll()
+              .then((data) => setAppointments(data.appointments));
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -180,6 +198,7 @@ function AppointmentCard({
   isClient,
   cancelling,
   onCancel,
+  onTransfer,
   onViewCounselor,
   isPast,
 }) {
@@ -192,7 +211,6 @@ function AppointmentCard({
     >
       <div className="flex justify-between items-start gap-4">
         <div className="flex items-center gap-4">
-          {/* Avatar */}
           <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-100 to-pink-100 flex items-center justify-center text-lg font-bold text-orange-400 flex-shrink-0">
             {person?.firstName?.charAt(0)}
           </div>
@@ -228,13 +246,21 @@ function AppointmentCard({
           </span>
 
           {!isPast && apt.status === "confirmed" && (
-            <button
-              onClick={() => onCancel(apt._id)}
-              disabled={cancelling === apt._id}
-              className="text-xs text-stone-300 hover:text-red-400 transition-colors disabled:opacity-50"
-            >
-              {cancelling === apt._id ? "Cancelando..." : "Cancelar"}
-            </button>
+            <>
+              <button
+                onClick={() => onTransfer(apt)}
+                className="text-xs text-orange-400 hover:text-orange-600 transition-colors"
+              >
+                Cambiar horario
+              </button>
+              <button
+                onClick={() => onCancel(apt._id)}
+                disabled={cancelling === apt._id}
+                className="text-xs text-stone-300 hover:text-red-400 transition-colors disabled:opacity-50"
+              >
+                {cancelling === apt._id ? "Cancelando..." : "Cancelar"}
+              </button>
+            </>
           )}
 
           {isClient && !isPast && (

@@ -59,14 +59,25 @@ const limiter = rateLimit({
   max: 100,
   message: "Demasiadas solicitudes, intentá más tarde.",
 });
-app.use("/api", limiter);
+
+const availabilityLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 500, // suficiente para cargar varios meses
+  message: "Demasiadas solicitudes, intentá más tarde.",
+});
+
+
 // ↓ RUTAS — agregar acá
-app.use("/api/auth", require("./routes/auth"));
-app.use("/api/counselors", require("./routes/counselors"));
-app.use("/api/appointments", require("./routes/appointments"));
-app.use("/api/users", require("./routes/users"));
-app.use("/api/availability", require("./routes/availability"));
-app.use("/api/admin", require("./routes/admin"));
+// Rutas
+app.use('/api/auth', require('./routes/auth'))
+app.use('/api/counselors', require('./routes/counselors'))
+app.use('/api/appointments', require('./routes/appointments'))
+app.use('/api/users', require('./routes/users'))
+app.use('/api/availability', availabilityLimiter, require('./routes/availability'))
+app.use('/api/admin', require('./routes/admin'))
+
+//limite general 
+app.use("/api", limiter);
 
 app.get("/version", (req, res) => {
   res.json({

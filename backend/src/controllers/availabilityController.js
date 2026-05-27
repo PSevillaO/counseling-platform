@@ -129,4 +129,101 @@ const getAvailableSlots = async (req, res) => {
   }
 };
 
-module.exports = { getAvailability, updateAvailability, getAvailableSlots };
+// GET /api/availability/:counselorId/month?year=2026&month=5
+const getMonthAvailability = async (req, res) => {
+  try {
+    const { year, month } = req.query;
+    if (!year || !month) {
+      return res
+        .status(400)
+        .json({ success: false, message: "year y month son requeridos." });
+    }
+
+    const y = parseInt(year);
+    const m = parseInt(month); // 0-11
+
+    const availability = await Availability.findOne({
+      counselor: req.params.counselorId,
+    });
+    if (!availability) {
+      return res.json({ success: true, days: {} });
+    }
+
+    const Appointment = require("../models/Appointment");
+    const daysInMonth = new Date(y, m + 1, 0).getDate();
+    const dayNames = [
+      "domingo",
+      "lunes",
+      "martes",
+      "miercoles",
+      "jueves",
+      "viernes",
+      "sabado",
+    ];
+
+    // Obtener todas las citas del mes de una sola consulta
+    const startOfMonth = new Date(Date.UTC(y, m, 1));
+    const endOfMonth = new Date(Date.UTC(y, m + 1, 0, 23, 59, 59));
+
+    const appointments = await Appointment.find({
+      counselor: req.params.counselorId,
+      date: { $gte: startOfMonth, $lte: endOfMonth },
+      status: { $in: ["confirmed", "pending"] },
+    });
+
+    // Agrupar citas por fecha
+    const bookedByDate = {};
+    appointments.forEach((apt) => {
+      const dateStr = apt.date.toISOString().split("T")[0];
+      if (!bookedByDate[dateStr]) bookedByDate[dateStr] = [];
+      bookedByDate[dateStr].push(apt.time);
+    });
+
+    // Calcular estado de cada día
+    const days = {};
+    for (let d = 1; d <= daysInMonth; d++) {
+      const date = new Date(Date.UTC(y, m, d));
+      const dateStr = date.toISOString().split("T")[0];
+      const dayOfWeek = dayNames[date.getUTCDay()];
+      const daySchedule = availability.weeklySchedule[dayOfWeek];
+
+      if (availability.blockedDates.includes(dateStr)) {
+        days[dateStr] = "none";
+        continue;
+      }
+
+      if (!daySchedule?.enabled || !daySchedule.slots?.length) {
+        days[dateStr] = "none";
+        continue;
+      }
+
+      const totalSlots = daySchedule.slots.length;
+      const booked = bookedByDate[dateStr] || [];
+      const available = totalSlots - booked.length;
+
+      if (available <= 0) {
+        days[dateStr] = "full";
+      } else if (available <= 2) {
+        days[dateStr] = "partial";
+      } else {
+        days[dateStr] = "available";
+      }
+    }
+
+    res.json({ success: true, days });
+  } catch (error) {
+    res
+      .status(500)
+      .json({
+        success: false,
+        message: "Error al obtener disponibilidad mensual.",
+      });
+  }
+};
+
+module.exports = {
+  getAvailability,
+  updateAvailability,
+  getAvailableSlots,
+  getMonthAvailability,
+};

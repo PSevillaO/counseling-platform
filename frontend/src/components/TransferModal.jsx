@@ -2,7 +2,9 @@ import { useState, useEffect } from "react";
 import counselorService from "../services/counselorService";
 import appointmentService from "../services/appointmentService";
 import availabilityService from "../services/availabilityService";
+import DatePicker from "./DatePicker";
 
+// eslint-disable-next-line no-unused-vars
 const getNextDays = (count) => {
   const days = [];
   for (let i = 1; i <= count; i++) {
@@ -40,8 +42,6 @@ export default function TransferModal({
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-
-  const days = getNextDays(60); // 60 días hacia adelante
 
   useEffect(() => {
     if (isAdmin) {
@@ -164,34 +164,14 @@ export default function TransferModal({
             <label className="block text-sm font-medium text-stone-600 mb-2">
               Nueva fecha
             </label>
-            <div className="grid grid-cols-5 sm:grid-cols-7 gap-1.5 max-h-48 overflow-y-auto">
-              {days.map((day) => {
-                const isSelected =
-                  selectedDate?.toDateString() === day.toDateString();
-                return (
-                  <button
-                    key={day.toDateString()}
-                    onClick={() => {
-                      setSelectedDate(day);
-                      setSelectedTime(null);
-                    }}
-                    className={`p-1.5 rounded-lg text-center text-xs font-medium transition-all ${
-                      isSelected
-                        ? "bg-orange-400 text-white"
-                        : "bg-orange-50 text-stone-500 hover:bg-orange-100 border border-orange-100"
-                    }`}
-                  >
-                    <div className="capitalize">
-                      {day.toLocaleDateString("es-AR", { weekday: "short" })}
-                    </div>
-                    <div className="font-bold">{day.getDate()}</div>
-                    <div className="capitalize">
-                      {day.toLocaleDateString("es-AR", { month: "short" })}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
+            <DatePicker
+              counselorId={selectedCounselor}
+              selectedDate={selectedDate}
+              onSelectDate={(date) => {
+                setSelectedDate(date);
+                setSelectedTime(null);
+              }}
+            />
           </div>
 
           {/* Elegir nuevo horario */}

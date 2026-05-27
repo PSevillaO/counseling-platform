@@ -4,7 +4,9 @@ import Navbar from "../components/Navbar";
 import counselorService from "../services/counselorService";
 import appointmentService from "../services/appointmentService";
 import availabilityService from "../services/availabilityService";
+import DatePicker from "../components/DatePicker";
 
+// eslint-disable-next-line no-unused-vars
 const getNextDays = (count) => {
   const days = [];
   for (let i = 1; i <= count; i++) {
@@ -47,7 +49,7 @@ export default function Booking() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
 
-  const days = getNextDays(14);
+  
 
   useEffect(() => {
     counselorService
@@ -167,41 +169,14 @@ export default function Booking() {
           <h2 className="font-semibold text-stone-700 mb-4">
             1. Elegí una fecha
           </h2>
-          <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
-            {days.map((day) => {
-              const isSelected =
-                selectedDate?.toDateString() === day.toDateString();
-              return (
-                <button
-                  key={day.toDateString()}
-                  // onClick={() => setSelectedDate(day)}
-                  onClick={() => {
-                    console.log(
-                      "día:",
-                      day.toLocaleDateString("es-AR", { weekday: "long" }),
-                    );
-                    console.log("fecha:", formatDateValue(day));
-                    setSelectedDate(day);
-                  }} // hasta aca
-                  className={`p-2 rounded-xl text-center text-xs font-medium transition-all ${
-                    isSelected
-                      ? "bg-orange-400 text-white shadow-sm"
-                      : "bg-orange-50 text-stone-500 hover:bg-orange-100 border border-orange-100"
-                  }`}
-                >
-                  <div className="capitalize">
-                    {day.toLocaleDateString("es-AR", { weekday: "short" })}
-                  </div>
-                  <div className="text-lg font-bold mt-0.5">
-                    {day.getDate()}
-                  </div>
-                  <div className="capitalize">
-                    {day.toLocaleDateString("es-AR", { month: "short" })}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
+          <DatePicker
+            counselorId={id}
+            selectedDate={selectedDate}
+            onSelectDate={(date) => {
+              setSelectedDate(date);
+              setSelectedTime(null);
+            }}
+          />
         </div>
 
         {/* Paso 2: Horario con slots reales */}

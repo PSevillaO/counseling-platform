@@ -351,10 +351,52 @@ const createRecurringAppointments = async (req, res) => {
   }
 };
 
+// PUT /api/appointments/:id/complete
+const completeAppointment = async (req, res) => {
+  try {
+    const appointment = await Appointment.findById(req.params.id);
+
+    if (!appointment) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Cita no encontrada." });
+    }
+
+    const isCounselor =
+      appointment.counselor.toString() === req.user._id.toString();
+    const isAdmin = req.user.role === "admin";
+
+    if (!isCounselor && !isAdmin) {
+      return res
+        .status(403)
+        .json({ success: false, message: "No tenés permiso." });
+    }
+
+    appointment.status = "completed";
+    await appointment.save();
+
+    // Actualizar contador de sesiones del counselor
+    await User.findByIdAndUpdate(appointment.counselor, {
+      $inc: { "counselorProfile.totalSessions": 1 },
+    });
+
+    res.json({
+      success: true,
+      message: "Sesión marcada como completada.",
+      appointment,
+    });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ success: false, message: "Error al completar la sesión." });
+  }
+};
+
 module.exports = {
   getAppointments,
   createAppointment,
   cancelAppointment,
   transferAppointment,
   createRecurringAppointments,
+  completeAppointment,
 };

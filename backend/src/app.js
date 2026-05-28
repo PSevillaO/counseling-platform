@@ -75,6 +75,7 @@ app.use('/api/appointments', require('./routes/appointments'))
 app.use('/api/users', require('./routes/users'))
 app.use('/api/availability', availabilityLimiter, require('./routes/availability'))
 app.use('/api/admin', require('./routes/admin'))
+app.use('/api/notes', require('./routes/notes'))
 
 //limite general 
 app.use("/api", limiter);

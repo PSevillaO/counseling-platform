@@ -24,6 +24,10 @@ const appointmentService = {
     const response = await api.post("/appointments/recurring", data);
     return response.data;
   },
+  complete: async (id) => {
+    const response = await api.put(`/appointments/${id}/complete`);
+    return response.data;
+  },
 };
 
 export default appointmentService;

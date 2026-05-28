@@ -7,6 +7,7 @@ import appointmentService from "../services/appointmentService";
 import availabilityService from "../services/availabilityService";
 import { useEffect } from "react";
 import counselorService from "../services/counselorService";
+import ClientSearch from "../components/ClientSearch";
 
 const formatDateValue = (date) => {
   const year = date.getFullYear();
@@ -25,7 +26,8 @@ export default function RecurringBooking() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  const counselorId = user?.role === "counselor" ? user?.id || user?._id : null;
+  // Para admin, agregar selector de counselor antes del cliente
+  const [counselors, setCounselors] = useState([]);
 
   const [selectedDate, setSelectedDate] = useState(null);
   // eslint-disable-next-line no-unused-vars
@@ -43,8 +45,16 @@ export default function RecurringBooking() {
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
 
+  // eslint-disable-next-line no-unused-vars
   const [clients, setClients] = useState([]);
-  const [selectedClient, setSelectedClient] = useState("");
+  const [selectedClient, setSelectedClient] = useState(null);
+
+  const isAdmin = user?.role === "admin";
+  const isCounselor = user?.role === "counselor";
+  const [selectedCounselorId, setSelectedCounselorId] = useState(
+    isCounselor ? user?.id || user?._id : null,
+  );
+  const counselorId = selectedCounselorId;
 
   useEffect(() => {
     if (!counselorId) return;
@@ -53,6 +63,11 @@ export default function RecurringBooking() {
       .then((data) => setClients(data.clients))
       .catch(console.error);
   }, [counselorId]);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    counselorService.getAll().then((data) => setCounselors(data.counselors));
+  }, [isAdmin]);
 
   const handleDateSelect = (date) => {
     setSelectedDate(date);
@@ -94,7 +109,7 @@ export default function RecurringBooking() {
     try {
       const data = await appointmentService.createRecurring({
         counselorId,
-        clientId: selectedClient, // ← agregar
+        clientId: selectedClient?._id,
         startDate: formatDateValue(selectedDate),
         time: selectedTime,
         frequency,
@@ -181,28 +196,39 @@ export default function RecurringBooking() {
           Programá una serie de sesiones automáticamente.
         </p>
         {/* Paso 0: Elegir cliente */}
+        {isAdmin && (
+          <div className="bg-white rounded-2xl border border-orange-100 p-6 mb-4">
+            <h2 className="font-semibold text-stone-700 mb-4">
+              1. Elegí el counselor
+            </h2>
+            <select
+              value={selectedCounselorId || ""}
+              onChange={(e) => {
+                setSelectedCounselorId(e.target.value);
+                setSelectedClient(null);
+                setSelectedDate(null);
+                setSelectedTime(null);
+              }}
+              className="w-full px-4 py-2.5 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-300 text-sm"
+            >
+              <option value="">Seleccioná un counselor</option>
+              {counselors.map((c) => (
+                <option key={c._id} value={c._id}>
+                  {c.firstName} {c.lastName}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
         <div className="bg-white rounded-2xl border border-orange-100 p-6 mb-4">
           <h2 className="font-semibold text-stone-700 mb-4">
             1. Elegí el cliente
           </h2>
-          {clients.length === 0 ? (
-            <p className="text-sm text-stone-400">
-              No tenés clientes con sesiones previas.
-            </p>
-          ) : (
-            <select
-              value={selectedClient}
-              onChange={(e) => setSelectedClient(e.target.value)}
-              className="w-full px-4 py-2.5 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-300 text-sm"
-            >
-              <option value="">Seleccioná un cliente</option>
-              {clients.map((c) => (
-                <option key={c._id} value={c._id}>
-                  {c.firstName} {c.lastName} — {c.email}
-                </option>
-              ))}
-            </select>
-          )}
+          <ClientSearch
+            counselorId={counselorId}
+            selectedClient={selectedClient}
+            onSelect={setSelectedClient}
+          />
         </div>
 
         {/* Paso 1: Fecha de inicio */}

@@ -6,8 +6,10 @@ const {
   getAllAppointments,
   getStats,
   createCounselor,
-  updateCounselor
+  updateCounselor,
+  getClients,
 } = require("../controllers/adminController");
+
 const { protect, restrictTo } = require("../middleware/auth");
 
 router.use(protect);
@@ -19,5 +21,6 @@ router.post("/counselors", createCounselor);
 router.put("/counselors/:id/toggle", toggleCounselor);
 router.get("/appointments", getAllAppointments);
 router.put("/counselors/:id", updateCounselor);
+router.get("/clients", getClients);
 
 module.exports = router;

@@ -5,6 +5,7 @@ const navItems = [
   { to: "/admin", label: "📊 Dashboard", end: true },
   { to: "/admin/counselors", label: "👥 Counselors" },
   { to: "/admin/appointments", label: "📅 Citas" },
+  { to: '/recurring', label: '🔄 Sesiones periódicas' },
 ];
 
 export default function AdminLayout({ children }) {

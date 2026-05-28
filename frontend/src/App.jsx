@@ -17,6 +17,7 @@ import AvailabilityEditor from './pages/admin/AvailabilityEditor'
 import CreateCounselor from './pages/admin/CreateCounselor'
 import EditCounselor from './pages/admin/EditCounselor'
 import RecurringBooking from './pages/RecurringBooking'
+import ClientNotes from './pages/ClientNotes'
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth()
@@ -46,6 +47,7 @@ function App() {
         <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
         <Route path="/availability" element={<ProtectedRoute><AvailabilityEditor /></ProtectedRoute>} />
         <Route path="/recurring" element={<ProtectedRoute> <RecurringBooking /></ProtectedRoute>} />
+        <Route path="/notes/:clientId" element={<ProtectedRoute><ClientNotes /></ProtectedRoute>} />
 
         {/* Admin */}
         <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />

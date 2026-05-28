@@ -58,20 +58,37 @@ const getCounselorById = async (req, res) => {
 
 const getCounselorClients = async (req, res) => {
   try {
+    const { search } = req.query;
+
     const appointments = await Appointment.find({
       counselor: req.params.id,
-      status: { $in: ['confirmed', 'completed'] }
-    }).populate('client', 'firstName lastName email')
+      status: { $in: ["confirmed", "completed"] },
+    }).populate("client", "firstName lastName email");
 
-    const clientsMap = {}
+    const clientsMap = {};
     appointments.forEach((apt) => {
-      if (apt.client) clientsMap[apt.client._id] = apt.client
-    })
+      if (apt.client) clientsMap[apt.client._id] = apt.client;
+    });
 
-    res.json({ success: true, clients: Object.values(clientsMap) })
+    let clients = Object.values(clientsMap);
+
+    // Filtrar por búsqueda si hay texto
+    if (search) {
+      const s = search.toLowerCase();
+      clients = clients.filter(
+        (c) =>
+          c.firstName.toLowerCase().includes(s) ||
+          c.lastName.toLowerCase().includes(s) ||
+          c.email.toLowerCase().includes(s),
+      );
+    }
+
+    res.json({ success: true, clients });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Error al obtener clientes.' })
+    res
+      .status(500)
+      .json({ success: false, message: "Error al obtener clientes." });
   }
-}
+};
 
 module.exports = { getCounselors, getCounselorById, getCounselorClients };

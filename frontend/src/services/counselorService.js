@@ -13,8 +13,10 @@ const counselorService = {
     const response = await api.get(`/counselors/${id}`);
     return response.data;
   },
-  getClients: async (counselorId) => {
-    const response = await api.get(`/counselors/${counselorId}/clients`);
+  getClients: async (counselorId, search = "") => {
+    const response = await api.get(
+      `/counselors/${counselorId}/clients?search=${search}`,
+    );
     return response.data;
   },
 };

@@ -5,6 +5,7 @@ import appointmentService from "../services/appointmentService";
 import { useAuth } from "../context/AuthContext";
 import TransferModal from "../components/TransferModal";
 
+
 const statusConfig = {
   confirmed: {
     label: "Confirmada",
@@ -66,6 +67,19 @@ export default function Appointments() {
       alert("No se pudo cancelar la sesión.");
     } finally {
       setCancelling(null);
+    }
+  };
+
+  const handleComplete = async (id) => {
+    if (!confirm("¿Marcar esta sesión como completada?")) return;
+    try {
+      await appointmentService.complete(id);
+      setAppointments((prev) =>
+        prev.map((a) => (a._id === id ? { ...a, status: "completed" } : a)),
+      );
+      // eslint-disable-next-line no-unused-vars
+    } catch (error) {
+      alert("Error al completar la sesión.");
     }
   };
 
@@ -141,7 +155,8 @@ export default function Appointments() {
                   isClient={isClient}
                   cancelling={cancelling}
                   onCancel={handleCancel}
-                  onTransfer={(apt) => setTransferring(apt)} // ← agregar
+                  onComplete={handleComplete} // ← agregar
+                  onTransfer={(apt) => setTransferring(apt)}
                   onViewCounselor={() =>
                     navigate(`/counselors/${apt.counselor._id}`)
                   }
@@ -165,10 +180,11 @@ export default function Appointments() {
                   isClient={isClient}
                   cancelling={cancelling}
                   onCancel={handleCancel}
+                  onComplete={handleComplete} // ← agregar
+                  onTransfer={(apt) => setTransferring(apt)}
                   onViewCounselor={() =>
                     navigate(`/counselors/${apt.counselor._id}`)
                   }
-                  isPast
                 />
               ))}
             </div>
@@ -200,10 +216,12 @@ function AppointmentCard({
   onCancel,
   onTransfer,
   onViewCounselor,
+  onComplete,
   isPast,
 }) {
   const status = statusConfig[apt.status] || statusConfig.confirmed;
   const person = isClient ? apt.counselor : apt.client;
+  const navigate = useNavigate()
 
   return (
     <div
@@ -260,6 +278,22 @@ function AppointmentCard({
               >
                 {cancelling === apt._id ? "Cancelando..." : "Cancelar"}
               </button>
+              {!isPast && apt.status === "confirmed" && !isClient && (
+                <button
+                  onClick={() => onComplete(apt._id)}
+                  className="text-xs text-green-500 hover:text-green-700 font-medium transition-colors"
+                >
+                  ✓ Completar
+                </button>
+              )}
+              {!isClient && (
+                <button
+                  onClick={() => navigate(`/notes/${apt.client?._id}`)}
+                  className="text-xs text-stone-400 hover:text-orange-400 transition-colors"
+                >
+                  📝 Notas
+                </button>
+              )}
             </>
           )}
 

@@ -196,6 +196,31 @@ const getCounselorClients = async (req, res) => {
   }
 };
 
+// GET /api/admin/clients?search=juan
+const getClients = async (req, res) => {
+  try {
+    const { search } = req.query;
+    const filter = { role: "client", isActive: true };
+
+    if (search) {
+      filter.$or = [
+        { firstName: { $regex: search, $options: "i" } },
+        { lastName: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    const clients = await User.find(filter)
+      .select("firstName lastName email")
+      .limit(20);
+    res.json({ success: true, clients });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ success: false, message: "Error al obtener clientes." });
+  }
+};
+
 module.exports = {
   getCounselors,
   toggleCounselor,
@@ -203,5 +228,5 @@ module.exports = {
   getStats,
   createCounselor,
   updateCounselor,
-  getCounselorClients,
+  getClients,
 };

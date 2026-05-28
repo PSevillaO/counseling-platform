@@ -28,6 +28,10 @@ const adminService = {
     const response = await api.put(`/admin/counselors/${id}`, data);
     return response.data;
   },
+  getClients: async (search = "") => {
+    const response = await api.get(`/admin/clients?search=${search}`);
+    return response.data;
+  },
 };
 
 export default adminService;
